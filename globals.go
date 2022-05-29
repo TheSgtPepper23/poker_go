@@ -21,16 +21,16 @@ func evaluateHand(hand, river Deck) (string, Card) {
 
 	isPair, pairValues := hasPair(wholeCards)
 	isThree, highest3 := hasThreeOrFour(wholeCards, 3)
-	isStraight, sumStraight := hasStraight(wholeCards)
+	isStraight, _ := hasStraight(wholeCards)
 	isFlush, flushedDeck := hasFlush(wholeCards)
 	isFour, highest4 := hasThreeOrFour(wholeCards, 4)
+	isSF, SFDeck := hasStarightFlush(wholeCards)
 
-	if isFlush && isStraight && sumStraight == 55 {
+	if isSF && sumValues(SFDeck, 0, len(SFDeck)) == 55 {
 		return Hands[9], higher
 	}
 
-	//TODO is wrong because the flush and the straigh can be non related
-	if isFlush && isStraight {
+	if isSF {
 		return Hands[8], higher
 	}
 
@@ -147,7 +147,6 @@ func sumValues(d Deck, s, e int) int {
 
 //Checks if the deck has a straigt and returns the sum of the values from that straight
 func hasStraight(hand Deck) (bool, int) {
-
 	hand = removeDuplicateValues(hand)
 	hand.sort(-1)
 	consecutiveCount, last, straigtStart := 0, 0, 0
@@ -173,6 +172,36 @@ func hasStraight(hand Deck) (bool, int) {
 		return true, sumValues(hand, straigtStart, straigtStart+5)
 	} else {
 		return false, 0
+	}
+}
+
+func hasStarightFlush(hand Deck) (bool, Deck) {
+	hand.sort(-1)
+	consecutiveCount, last, straigtStart := 0, 0, 0
+	lastFace := ""
+	for i, c := range hand {
+		if consecutiveCount == 4 {
+			break
+		}
+		//If theres is a difference of 1 beetween the last and current value
+		if last-c.aValue() == 1 && lastFace == c.face {
+			if consecutiveCount == 0 {
+				//Never can lower than 1, because the first comparison allwais will fail (last is 0 by default)
+				straigtStart = i - 1
+			}
+			consecutiveCount++
+		} else {
+			consecutiveCount = 0
+		}
+
+		last = c.aValue()
+		lastFace = c.face
+	}
+
+	if consecutiveCount == 4 {
+		return true, hand[straigtStart : straigtStart+5]
+	} else {
+		return false, Deck{}
 	}
 }
 

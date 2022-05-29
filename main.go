@@ -19,13 +19,13 @@ func main() {
 	table.acceptBet(20, 0)
 
 	deck := Deck{
-		Card{face: "H", value: "A"},
-		Card{face: "S", value: "2"},
-		Card{face: "D", value: "4"},
-		Card{face: "S", value: "7"},
-		Card{face: "S", value: "3"},
-		Card{face: "D", value: "5"},
+		Card{face: "C", value: "A"},
+		Card{face: "S", value: "K"},
+		Card{face: "S", value: "Q"},
+		Card{face: "S", value: "J"},
+		Card{face: "S", value: "10"},
 		Card{face: "S", value: "9"},
+		Card{face: "S", value: "5"},
 	}
 
 	fmt.Println(evaluateHand(deck, Deck{}))

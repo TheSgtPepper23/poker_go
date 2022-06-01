@@ -1,6 +1,10 @@
 package main
 
-import "github.com/lithammer/shortuuid/v3"
+import (
+	"sync"
+
+	"github.com/lithammer/shortuuid/v3"
+)
 
 //Represent a player at the table with its hand and its chips
 type Player struct {
@@ -68,15 +72,50 @@ func (t *Table) deal(q int) {
 
 //Deals the indicated amount of cards to the table river from the table deck (The cards are removed from the deck)
 func (t *Table) dealRiverCards(q int) {
-	if len(t.river) < 5 {
-		river, rest := deal(t.deck, q)
-		t.river = river
-		t.deck = rest
-	}
+	river, rest := deal(t.deck, q)
+	t.river = river
+	t.deck = rest
 }
 
 //Takes the bet from a player and adds that amount to the table pot
 func (t *Table) acceptBet(amount, playerPosition int) {
 	chips := t.players[playerPosition].bet(amount)
 	t.pot += chips
+}
+
+//TODO If nobody has anything, discard river hand
+func (t *Table) showTime() (Player, string) {
+
+	var wg sync.WaitGroup
+	results := make([]int, len(t.players))
+
+	for i, p := range t.players {
+		wg.Add(1)
+		i := i
+		p := p
+
+		go func() {
+			defer wg.Done()
+			temp := make(Deck, len(t.river))
+			tempHand := make(Deck, len(p.hand))
+			copy(temp, t.river)
+			copy(tempHand, p.hand)
+			res, _ := evaluateHand(append(temp, tempHand...))
+			results[i] = res
+		}()
+	}
+	wg.Wait()
+
+	higher := 0
+	higherPos := -1
+
+	for i, v := range results {
+		if v > higher {
+			higher = v
+			higherPos = i
+		}
+	}
+
+	return t.players[higherPos], Hands[higher]
+
 }

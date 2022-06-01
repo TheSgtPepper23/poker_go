@@ -55,9 +55,7 @@ func deal(d Deck, q int) (Deck, Deck) {
 
 //Prints out the deck, its only for developing reasons
 func (d Deck) print() {
-	for i, c := range d {
-		fmt.Println(i, fmt.Sprintln(c.face, c.value))
-	}
+	fmt.Println(d, "!")
 }
 
 //Sorts the cards on the deck by the value of the card. It ignores the face. The order parameter defines if the order is ascendant or descendant
@@ -84,22 +82,22 @@ func (d Deck) hasValue(c Card) bool {
 	return false
 }
 
-// func (d Deck) hasFace(c Card) bool {
-// 	for _, v := range d {
-// 		if v.face == c.face {
-// 			return true
-// 		}
-// 	}
+func (d Deck) hasFace(c Card) bool {
+	for _, v := range d {
+		if v.face == c.face {
+			return true
+		}
+	}
 
-// 	return false
-// }
+	return false
+}
 
-// func (d Deck) hasCard(c Card) bool {
-// 	for _, v := range d {
-// 		if v == c {
-// 			return true
-// 		}
-// 	}
+func (d Deck) hasCard(c Card) bool {
+	for _, v := range d {
+		if v == c {
+			return true
+		}
+	}
 
-// 	return false
-// }
+	return false
+}

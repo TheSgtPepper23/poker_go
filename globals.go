@@ -14,55 +14,53 @@ func determineValue(val string) int {
 	return -1
 }
 
-func evaluateHand(hand, river Deck) (string, Card) {
-	wholeCards := append(hand, river...)
-	wholeCards.sort(-1)
-	higher := wholeCards[0]
-
-	isPair, pairValues := hasPair(wholeCards)
-	isThree, highest3 := hasThreeOrFour(wholeCards, 3)
-	isStraight, _ := hasStraight(wholeCards)
-	isFlush, flushedDeck := hasFlush(wholeCards)
-	isFour, highest4 := hasThreeOrFour(wholeCards, 4)
-	isSF, SFDeck := hasStarightFlush(wholeCards)
+func evaluateHand(hand Deck) (int, Card) {
+	hand.sort(-1)
+	higher := hand[0]
+	isPair, pairValues := hasPair(hand)
+	isThree, highest3 := hasThreeOrFour(hand, 3)
+	isStraight, _ := hasStraight(hand)
+	isFlush, flushedDeck := hasFlush(hand)
+	isFour, highest4 := hasThreeOrFour(hand, 4)
+	isSF, SFDeck := hasStarightFlush(hand)
 
 	if isSF && sumValues(SFDeck, 0, len(SFDeck)) == 55 {
-		return Hands[9], higher
+		return 9, higher
 	}
 
 	if isSF {
-		return Hands[8], higher
+		return 8, higher
 	}
 
 	if isFour {
-		return Hands[7], Card{face: "S", value: Values[highest4-1]}
+		return 7, Card{face: "S", value: Values[highest4-1]}
 	}
 
 	if isThree && isPair {
-		return Hands[6], Card{}
+		return 6, Card{}
 	}
 
 	if isFlush {
-		return Hands[5], flushedDeck[0]
+		return 5, flushedDeck[0]
 	}
 
 	if isStraight {
-		return Hands[4], flushedDeck[0]
+		return 4, flushedDeck[0]
 	}
 
 	if isThree {
-		return Hands[3], Card{face: "S", value: Values[highest3-1]}
+		return 3, Card{face: "S", value: Values[highest3-1]}
 	}
 
 	if isPair && len(pairValues) > 1 {
-		return Hands[2], Card{}
+		return 2, Card{}
 	}
 
 	if isPair {
-		return Hands[1], Card{}
+		return 1, Card{}
 	}
 
-	return Hands[0], higher
+	return 0, higher
 }
 
 //Returns a map with the repetitions for each of the values present in the deck

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"sync"
 
 	"github.com/lithammer/shortuuid/v3"
@@ -16,7 +17,7 @@ type Player struct {
 
 //Returns a new player with the specified name, the specified amount of chips, an empty hand and a random id
 func createPlayer(name string, amount int) Player {
-	p := Player{name: name, hand: make([]Card, 0), chips: amount, id: shortuuid.New()}
+	p := Player{name: name, hand: make(Deck, 0), chips: amount, id: shortuuid.New()}
 	return p
 }
 
@@ -30,21 +31,23 @@ func (p *Player) bet(amount int) int {
 //Repesents a table to play poker, it has the deck, can sit the players, has a river and a pot. It's supose to allow
 //diferent poker games, so some elements may not be used in every ocation
 type Table struct {
-	deck    Deck
-	players []Player
-	river   Deck
-	pot     int
+	deck       Deck
+	players    []Player
+	maxPlayers int
+	river      Deck
+	pot        int
 }
 
 //Returns a new table, with a shuffled deck, an empty list of players, and also empty river and pot
-func createTable() Table {
+func createTable(mp int) Table {
 	deck := createDeck()
 	deck.shuffle()
 	table := Table{
-		deck:    deck,
-		players: make([]Player, 0),
-		river:   Deck{},
-		pot:     0,
+		deck:       deck,
+		players:    make([]Player, 0),
+		river:      Deck{},
+		pot:        0,
+		maxPlayers: mp,
 	}
 
 	return table
@@ -53,7 +56,7 @@ func createTable() Table {
 //Sits a new player in the table if the current amount is less than 5 and returns a boolean indicating the result
 //of the operation
 func (t *Table) addPlayer(p Player) bool {
-	if len(t.players) < 5 {
+	if len(t.players) < t.maxPlayers {
 		t.players = append(t.players, p)
 		return true
 	} else {
@@ -107,15 +110,32 @@ func (t *Table) showTime() (Player, string) {
 	wg.Wait()
 
 	higher := 0
-	higherPos := -1
+	//Contains the ids of the winner players, not the player
+	winners := []int{}
+	higherPos := 0
 
 	for i, v := range results {
+		if v == higher {
+			winners = append(winners, i)
+		}
 		if v > higher {
 			higher = v
 			higherPos = i
+			winners = nil
+			winners = append(winners, i)
+
 		}
 	}
 
-	return t.players[higherPos], Hands[higher]
+	fmt.Println(winners)
+	if len(winners) > 1 {
+		winerPlayers := make([]Player, len(winners))
+		for i := range winerPlayers {
+			winerPlayers[i] = t.players[i]
+		}
+		return t.players[winners[untie(winerPlayers, higher)]], Hands[higher]
+	} else {
+		return t.players[higherPos], Hands[higher]
+	}
 
 }

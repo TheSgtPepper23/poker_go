@@ -9,19 +9,9 @@ import (
 
 //Represents a card with its face and value
 type Card struct {
-	face  string
-	value string
-}
-
-//Returns a numeric value corresponding to the cards value
-func (c Card) aValue() int {
-	for i, v := range Values {
-		if v == c.value {
-			return i + 1
-		}
-	}
-
-	return -1
+	face     string
+	value    string
+	numValue int
 }
 
 //Represents a collection of cards
@@ -31,8 +21,8 @@ type Deck []Card
 func createDeck() Deck {
 	cards := Deck{}
 	for _, f := range Faces {
-		for _, v := range Values {
-			cards = append(cards, Card{value: v, face: f})
+		for i, v := range Values {
+			cards = append(cards, Card{value: v, face: f, numValue: i + 1})
 		}
 	}
 
@@ -48,6 +38,20 @@ func (d Deck) shuffle() {
 	})
 }
 
+func (d Deck) highestIndex() int {
+	v := 0
+	di := -1
+
+	for i, c := range d {
+		if c.numValue > v {
+			di = i
+			v = c.numValue
+		}
+	}
+
+	return di
+}
+
 //Returns the top q cards of the deck and the rest of the cards
 func deal(d Deck, q int) (Deck, Deck) {
 	return d[:q], d[q:]
@@ -58,15 +62,15 @@ func (d Deck) print() {
 	fmt.Println(d, "!")
 }
 
-//Sorts the cards on the deck by the value of the card. It ignores the face. The order parameter defines if the order is ascendant or descendant
+//Sorts the cards on the deck by the value of the card. It ignores the face. The order parameter defines if the order is ascendant (1) or descendant (-1)
 func (d Deck) sort(order int) {
 	if order >= 0 {
 		sort.SliceStable(d, func(i, j int) bool {
-			return d[i].aValue() < d[j].aValue()
+			return d[i].numValue < d[j].numValue
 		})
 	} else {
 		sort.SliceStable(d, func(i, j int) bool {
-			return d[i].aValue() > d[j].aValue()
+			return d[i].numValue > d[j].numValue
 		})
 	}
 }

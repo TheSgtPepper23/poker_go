@@ -137,14 +137,14 @@ func hasThreeOrFour(hand Deck, q int) (bool, int) {
 func sumValues(d Deck, s, e int) int {
 	sum := 0
 	for _, v := range d[s:e] {
-		sum += v.aValue()
+		sum += v.numValue
 	}
 
 	return sum
 }
 
 //Checks if the deck has a straigt and returns the sum of the values from that straight
-func hasStraight(hand Deck) (bool, int) {
+func hasStraight(hand Deck) (bool, Deck) {
 	hand = removeDuplicateValues(hand)
 	hand.sort(-1)
 	consecutiveCount, last, straigtStart := 0, 0, 0
@@ -153,7 +153,7 @@ func hasStraight(hand Deck) (bool, int) {
 			break
 		}
 		//If theres is a difference of 1 beetween the last and current value
-		if last-c.aValue() == 1 {
+		if last-c.numValue == 1 {
 			if consecutiveCount == 0 {
 				//Never can lower than 1, because the first comparison allwais will fail (last is 0 by default)
 				straigtStart = i - 1
@@ -163,13 +163,13 @@ func hasStraight(hand Deck) (bool, int) {
 			consecutiveCount = 0
 		}
 
-		last = c.aValue()
+		last = c.numValue
 	}
 
 	if consecutiveCount == 4 {
-		return true, sumValues(hand, straigtStart, straigtStart+5)
+		return true, hand[straigtStart : straigtStart+5]
 	} else {
-		return false, 0
+		return false, Deck{}
 	}
 }
 
@@ -182,7 +182,7 @@ func hasStarightFlush(hand Deck) (bool, Deck) {
 			break
 		}
 		//If theres is a difference of 1 beetween the last and current value
-		if last-c.aValue() == 1 && lastFace == c.face {
+		if last-c.numValue == 1 && lastFace == c.face {
 			if consecutiveCount == 0 {
 				//Never can lower than 1, because the first comparison allwais will fail (last is 0 by default)
 				straigtStart = i - 1
@@ -192,7 +192,7 @@ func hasStarightFlush(hand Deck) (bool, Deck) {
 			consecutiveCount = 0
 		}
 
-		last = c.aValue()
+		last = c.numValue
 		lastFace = c.face
 	}
 
@@ -227,4 +227,16 @@ func hasFlush(d Deck) (bool, Deck) {
 	}
 
 	return false, d
+}
+
+func untie(players []Player, kind int) int {
+	decks := Deck{}
+
+	for _, p := range players {
+		tempDeck := make(Deck, len(p.hand))
+		copy(tempDeck, p.hand)
+		decks = append(decks, tempDeck[tempDeck.highestIndex()])
+	}
+
+	return decks.highestIndex()
 }

@@ -3,7 +3,7 @@ package main
 import "fmt"
 
 func main() {
-	table := createTable()
+	table := createTable(5)
 
 	player1 := createPlayer("Player 1", 50)
 	player2 := createPlayer("Player 2", 50)
@@ -22,6 +22,5 @@ func main() {
 	table.dealRiverCards(5)
 
 	fmt.Println(table.showTime())
-	table.river.print()
 
 }

@@ -101,8 +101,11 @@ func TestShowTimeFunc(t *testing.T) {
 
 	testMultipleWinners(&table)
 
-	fmt.Println(table.showTime())
-	table.river.print()
+	wp, h := table.showTime()
+
+	if wp.name != "p4" || h != "twoPairs" {
+		t.Errorf("Wrong hand evaluation")
+	}
 
 }
 

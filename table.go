@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"sync"
 
 	"github.com/lithammer/shortuuid/v3"
@@ -90,7 +89,7 @@ func (t *Table) acceptBet(amount, playerPosition int) {
 func (t *Table) showTime() (Player, string) {
 
 	var wg sync.WaitGroup
-	results := make([]int, len(t.players))
+	results := make([]Evaluation, len(t.players))
 
 	for i, p := range t.players {
 		wg.Add(1)
@@ -103,7 +102,7 @@ func (t *Table) showTime() (Player, string) {
 			tempHand := make(Deck, len(p.hand))
 			copy(temp, t.river)
 			copy(tempHand, p.hand)
-			res, _ := evaluateHand(append(temp, tempHand...))
+			res := evaluateHand(tempHand, temp)
 			results[i] = res
 		}()
 	}
@@ -112,28 +111,30 @@ func (t *Table) showTime() (Player, string) {
 	higher := 0
 	//Contains the ids of the winner players, not the player
 	winners := []int{}
+	evs := []Evaluation{}
 	higherPos := 0
 
 	for i, v := range results {
-		if v == higher {
+		if v.handRating == higher {
 			winners = append(winners, i)
+			evs = append(evs, v)
 		}
-		if v > higher {
-			higher = v
+		if v.handRating > higher {
+			higher = v.handRating
 			higherPos = i
 			winners = nil
+			evs = nil
 			winners = append(winners, i)
-
+			evs = append(evs, v)
 		}
 	}
 
-	fmt.Println(winners)
 	if len(winners) > 1 {
 		winerPlayers := make([]Player, len(winners))
 		for i := range winerPlayers {
 			winerPlayers[i] = t.players[i]
 		}
-		return t.players[winners[untie(winerPlayers, higher)]], Hands[higher]
+		return t.players[winners[untie(winerPlayers, evs)]], Hands[higher]
 	} else {
 		return t.players[higherPos], Hands[higher]
 	}

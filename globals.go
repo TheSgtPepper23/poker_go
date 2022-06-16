@@ -1,78 +1,78 @@
 package main
 
+import (
+	"sort"
+)
+
 var Faces = []string{"S", "H", "D", "C"}
 var Values = []string{"2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K", "A"}
 var Hands = []string{"highCard", "onePair", "twoPairs", "threeKind", "straight", "flush", "fullhouse", "fourKind", "straightFlush", "royalFlush"}
 
-func determineValue(val string) int {
-	for i, v := range Values {
-		if v == val {
-			return i + 1
-		}
-	}
-
-	return -1
+type Evaluation struct {
+	face       string
+	sum        int
+	handRating int
 }
 
-func evaluateHand(hand Deck) (int, Card) {
+func evaluateHand(p, river Deck) Evaluation {
+	hand := append(p, river...)
 	hand.sort(-1)
-	higher := hand[0]
 	isPair, pairValues := hasPair(hand)
 	isThree, highest3 := hasThreeOrFour(hand, 3)
-	isStraight, _ := hasStraight(hand)
-	isFlush, flushedDeck := hasFlush(hand)
+	isStraight, straightDeck := hasStraight(hand)
+	isFlush := hasFlush(hand)
 	isFour, highest4 := hasThreeOrFour(hand, 4)
-	isSF, SFDeck := hasStarightFlush(hand)
+	isSF, SFDeck, sfFace := hasStarightFlush(hand)
 
 	if isSF && sumValues(SFDeck, 0, len(SFDeck)) == 55 {
-		return 9, higher
+		return Evaluation{face: sfFace, sum: 55, handRating: 9}
 	}
 
 	if isSF {
-		return 8, higher
+		return Evaluation{face: sfFace, sum: sumValues(SFDeck, 0, len(SFDeck)), handRating: 8}
 	}
 
 	if isFour {
-		return 7, Card{face: "S", value: Values[highest4-1]}
+		return Evaluation{handRating: 7, sum: highest4 * 4}
 	}
 
 	if isThree && isPair {
-		return 6, Card{}
+		return Evaluation{handRating: 6, sum: (highest3 * 3) + (pairValues[0] * 2)}
 	}
 
 	if isFlush {
-		return 5, flushedDeck[0]
+		return Evaluation{handRating: 5, sum: sumValues(p, 0, len(p))}
 	}
 
 	if isStraight {
-		return 4, flushedDeck[0]
+		return Evaluation{handRating: 4, sum: sumValues(straightDeck, 0, len(straightDeck))}
 	}
 
 	if isThree {
-		return 3, Card{face: "S", value: Values[highest3-1]}
+		return Evaluation{handRating: 3, sum: highest3 * 3}
 	}
 
 	if isPair && len(pairValues) > 1 {
-		return 2, Card{}
+		return Evaluation{handRating: 2, sum: pairValues[0]*2 + pairValues[1]*2}
 	}
 
 	if isPair {
-		return 1, Card{}
+		return Evaluation{handRating: 1, sum: pairValues[0] * 2}
 	}
 
-	return 0, higher
+	return Evaluation{handRating: 0}
 }
 
 //Returns a map with the repetitions for each of the values present in the deck
-func separateByValue(d Deck) map[string]int {
-	m := make(map[string]int)
+func separateByValue(d Deck) map[int]int {
+	m := make(map[int]int)
 
 	for _, c := range d {
-		q, v := m[c.value]
+		q, v := m[c.numValue]
 		if v {
-			m[c.value] = q + 1
+			m[c.numValue] = q + 1
 		} else {
-			m[c.value] = 1
+			m[c.numValue] = 1
 		}
 	}
 
@@ -106,10 +106,13 @@ func hasPair(hand Deck) (bool, []int) {
 	for k, v := range m {
 		if v == 2 {
 			has = true
-			values = append(values, determineValue(k))
+			values = append(values, k)
 		}
 
 	}
+
+	//Descending sort of the values
+	sort.Sort(sort.Reverse(sort.IntSlice(values)))
 
 	return has, values
 }
@@ -123,9 +126,9 @@ func hasThreeOrFour(hand Deck, q int) (bool, int) {
 	m := separateByValue(hand)
 
 	for k, v := range m {
-		if v == q && determineValue(k) > higher {
+		if v == q && k > higher {
 			has = true
-			higher = determineValue(k)
+			higher = k
 		}
 
 	}
@@ -173,7 +176,7 @@ func hasStraight(hand Deck) (bool, Deck) {
 	}
 }
 
-func hasStarightFlush(hand Deck) (bool, Deck) {
+func hasStarightFlush(hand Deck) (bool, Deck, string) {
 	hand.sort(-1)
 	consecutiveCount, last, straigtStart := 0, 0, 0
 	lastFace := ""
@@ -197,9 +200,9 @@ func hasStarightFlush(hand Deck) (bool, Deck) {
 	}
 
 	if consecutiveCount == 4 {
-		return true, hand[straigtStart : straigtStart+5]
+		return true, hand[straigtStart : straigtStart+5], lastFace
 	} else {
-		return false, Deck{}
+		return false, Deck{}, lastFace
 	}
 }
 
@@ -216,27 +219,54 @@ func removeDuplicateValues(d Deck) Deck {
 }
 
 //Evaluates if the Deck has a flush and returns the deck if its necesary to compare two flushes
-func hasFlush(d Deck) (bool, Deck) {
+func hasFlush(d Deck) bool {
 	d.sort(-1)
 	m := separateByFace(d)
 
 	for _, v := range m {
 		if v >= 5 {
-			return true, d
+			return true
 		}
 	}
 
-	return false, d
+	return false
 }
 
-func untie(players []Player, kind int) int {
-	decks := Deck{}
+//Of a list of players (all winners) return the one with the highest card. If two have the same hand, then returns the first
+//TODO Implement first round of untie in which the winner is decided by the highest value of his hand and not a kicker
+func untie(players []Player, evaluations []Evaluation) int {
+	defSum := evaluations[0].sum
+	allEqual := true
 
-	for _, p := range players {
-		tempDeck := make(Deck, len(p.hand))
-		copy(tempDeck, p.hand)
-		decks = append(decks, tempDeck[tempDeck.highestIndex()])
+	for _, e := range evaluations {
+		if e.sum != defSum {
+			allEqual = false
+			break
+		}
 	}
 
-	return decks.highestIndex()
+	if allEqual {
+		decks := Deck{}
+
+		for _, p := range players {
+			tempDeck := make(Deck, len(p.hand))
+			copy(tempDeck, p.hand)
+			decks = append(decks, tempDeck[tempDeck.highestIndex()])
+		}
+
+		return decks.highestIndex()
+	} else {
+		hs := 0
+		hsi := 0
+
+		for i, e := range evaluations {
+			if e.sum > hs {
+				hs = e.sum
+				hsi = i
+			}
+		}
+
+		return hsi
+	}
+
 }

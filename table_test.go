@@ -77,9 +77,71 @@ func TestTable(t *testing.T) {
 		t.Errorf(("Playe chips didnt decrease"))
 	}
 
+	//TODO test showtime with a rigged river and hands for every player
 	p, s := table.showTime()
 	table.river.print()
 
 	fmt.Println(p, s, "hoa")
+}
 
+func TestShowTimeFunc(t *testing.T) {
+	table := createTable(5)
+
+	p1 := createPlayer("p1", 500)
+	p2 := createPlayer("p2", 500)
+	p3 := createPlayer("p3", 500)
+	p4 := createPlayer("p4", 500)
+	p5 := createPlayer("p5", 500)
+
+	table.addPlayer(p1)
+	table.addPlayer(p2)
+	table.addPlayer(p3)
+	table.addPlayer(p4)
+	table.addPlayer(p5)
+
+	testMultipleWinners(&table)
+
+	fmt.Println(table.showTime())
+	table.river.print()
+
+}
+
+func testMultipleWinners(t *Table) {
+	t.river = append(
+		t.river,
+		Card{face: "H", value: "K", numValue: 12},
+		Card{face: "H", value: "7", numValue: 6},
+		Card{face: "D", value: "7", numValue: 6},
+		Card{face: "D", value: "Q", numValue: 11},
+		Card{face: "C", value: "3", numValue: 2},
+	)
+
+	t.players[0].hand = append(
+		t.players[0].hand,
+		Card{face: "C", value: "10", numValue: 9},
+		Card{face: "C", value: "J", numValue: 10},
+	)
+
+	t.players[1].hand = append(
+		t.players[1].hand,
+		Card{face: "C", value: "2", numValue: 1},
+		Card{face: "S", value: "3", numValue: 2},
+	)
+
+	t.players[2].hand = append(
+		t.players[2].hand,
+		Card{face: "H", value: "2", numValue: 1},
+		Card{face: "D", value: "A", numValue: 13},
+	)
+
+	t.players[3].hand = append(
+		t.players[3].hand,
+		Card{face: "D", value: "10", numValue: 9},
+		Card{face: "S", value: "K", numValue: 12},
+	)
+	t.players[4].hand = append(
+		t.players[4].hand,
+		Card{face: "C", value: "A", numValue: 13},
+		Card{face: "D", value: "J", numValue: 10},
+	)
 }

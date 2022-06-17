@@ -1,4 +1,4 @@
-package main
+package pepperPoker
 
 import (
 	"sort"
@@ -206,6 +206,7 @@ func hasStarightFlush(hand Deck) (bool, Deck, string) {
 	}
 }
 
+//Removes the cards with the same value and only keeps one of each
 func removeDuplicateValues(d Deck) Deck {
 	nd := Deck{}
 
